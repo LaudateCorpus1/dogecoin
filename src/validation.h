@@ -13,6 +13,7 @@
 #include "amount.h"
 #include "chain.h"
 #include "coins.h"
+#include "policy/policy.h" // For RECOMMENDED_MIN_TX_FEE
 #include "protocol.h" // For CMessageHeader::MessageStartChars
 #include "script/script_error.h"
 #include "sync.h"
@@ -54,12 +55,17 @@ static const bool DEFAULT_WHITELISTRELAY = true;
 /** Default for DEFAULT_WHITELISTFORCERELAY. */
 static const bool DEFAULT_WHITELISTFORCERELAY = true;
 /** Default for -minrelaytxfee, minimum relay fee for transactions */
-static const CAmount DEFAULT_MIN_RELAY_TX_FEE = COIN / 1000;
+static const CAmount DEFAULT_MIN_RELAY_TX_FEE = RECOMMENDED_MIN_TX_FEE / 10;
 //! -maxtxfee default
-static const CAmount DEFAULT_TRANSACTION_MAXFEE = 400 * COIN;
+//rnicoll: 8/2021 scaled down as recommended fee is lowered
+static const CAmount DEFAULT_TRANSACTION_MAXFEE = RECOMMENDED_MIN_TX_FEE * 10000;
+
 //! Discourage users to set fees higher than this amount (in satoshis) per kB
-//mlumin: 5/2021 adjusted downward for fee revisions
-static const CAmount HIGH_TX_FEE_PER_KB = 10 * COIN;
+/* Dogecoin: Set the high tx fee to be higher than the default values
+ *           implemented by the wallet.
+ */
+static const CAmount HIGH_TX_FEE_PER_KB = RECOMMENDED_MIN_TX_FEE * 1000;
+
 //! -maxtxfee will warn if called with a higher fee than this amount (in satoshis)
 //mlumin: 5/2021 adjusted max upward in terms of coin
 static const CAmount HIGH_MAX_TX_FEE = 100 * HIGH_TX_FEE_PER_KB;
@@ -283,7 +289,6 @@ std::string GetWarnings(const std::string& strFor);
 bool GetTransaction(const uint256 &hash, CTransactionRef &tx, const Consensus::Params& params, uint256 &hashBlock, bool fAllowSlow = false);
 /** Find the best known block, and make it the tip of the block chain */
 bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams, std::shared_ptr<const CBlock> pblock = std::shared_ptr<const CBlock>());
-CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
 /** Guess verification progress (as a fraction between 0.0=genesis and 1.0=current tip). */
 double GuessVerificationProgress(const ChainTxData& data, CBlockIndex* pindex);

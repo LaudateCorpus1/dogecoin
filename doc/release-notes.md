@@ -1,9 +1,10 @@
-Dogecoin Core version 1.14.4 is now available from:
+Dogecoin Core version 1.14.5 is now available from:
 
-  <https://github.com/dogecoin/dogecoin/releases/tag/v1.14.4/>
+  <https://github.com/dogecoin/dogecoin/releases/tag/v1.14.5/>
 
-This is a new minor version release, including various bugfixes and performance improvements. It is a recommended
-update for all users.
+This is a new minor version release, including important security updates and
+changes to network policies. All Dogecoin Core users, miners, services, relay
+operators and wallet users are strongly recommended to upgrade.
 
 Please report bugs using the issue tracker at github:
 
@@ -11,14 +12,15 @@ Please report bugs using the issue tracker at github:
 
 To receive security and update notifications, please watch reddit or Twitter:
 
-  * https://www.reddit.com/r/dogecoin/
+  * https://www.reddit.com/r/dogecoindev/
   * @Dogecoin on Twitter for high priority announcements
   * @dogecoin\_devs on Twitter for updates on development work
 
 Compatibility
 ==============
 
-Dogecoin Core is extensively tested on Ubuntu Server LTS, Mac OS X and Windows 10.
+Dogecoin Core is extensively tested on Ubuntu Server LTS, Intel-based macOS
+and Windows 10.
 
 Dogecoin Core should also work on most other Unix-like systems but is not
 frequently tested on them.
@@ -26,147 +28,200 @@ frequently tested on them.
 Notable changes
 ===============
 
-Enabling Future Fee Reductions
--------------------------------
+Important Security Updates
+--------------------------
 
-This release preparing the network for a reduction of the recommended fees by
-reducing the default fee requirement 1000x for transaction relay and 100x for
-mining. At the same time it increases freedom for miner, wallet and node
-operators to agree on fees regardless of defaults coded into the Dogecoin Core
-software by solidifying fine-grained controls for operators to deviate from
-built-in defaults.
+This release contains fixes for 2 high severity vulnerabilities that affect
+most Dogecoin Core users.
 
-This realizes the first part of a two-stage update to lower the fee
-recommendation.
+### Remote Code Execution in Dogecoin QT (CVE-2021-3401)
 
-The main highlights for these enhancements are:
+This release addresses CVE-2021-3401 that opened potential remote code execution
+on QT (graphical user interface) wallets through malicious use of
+`dogecoin:` URIs.
 
-* Transaction sizes are no longer rounded up to the nearest kilobyte when
-  deciding if a transaction can be accepted from another node and in applying
-  fee-filter requests from peers, when relaying transactions.
-* The default setting shipped with dogecoin core for relay fee has been reduced
-  to 0.001 DOGE (was: 1 DOGE). This can be changed by operators using the
-  `-mintxrelayfee=<amount>` option.
-* Spam management has been delegated to miners, where currently a default fee
-  of 0.01 DOGE has been set as a recommended default, to prevent spam on the
-  blockchain. Miners can change this setting to their liking using the
-  `-blockmintxfee` option.
-* The relay dust limit has been reduced 100x to 0.01 DOGE and is now
-  configurable via the `-dustlimit` option.
+**Dogecoin QT users are urged to please update their installations to this
+version immediately**, to prevent malicious actors from exploiting this
+vulnerability.
 
-For this release, the recommended fees and dust limits, as implemented in the
-wallet, remain at 1 DOGE per kilobyte, inclusive of the rounding up to the
-nearest kilobyte, as miners and the relay network will upgrade gradually,
-requiring time for transactions with lower fees to be able to be relayed and
-mined. Not doing this would result in all transactions being rejected by old
-nodes. A subsequent release will finalize the second stage and lower the
-recommended fees implemented in the wallet by default. Wallet operators can
-however, at their own judgement and convenience, change the fees paid from
-their wallets with the `-paytxfee=<amount per kb>` option.
+### Sensitive Information Exposure on Unix platforms (CVE-2019-15947)
 
-Synchronization Improvements
-----------------------------
+A fix for CVE-2019-15947 was back-ported from Bitcoin Core to prevent potential
+leakage of sensitive information when Dogecoin Core crashes on Unix platforms.
+The vulnerability is patched for systems that run a Linux kernel equal to or
+higher than 3.4.
 
-This release removes a bug in the network layer where a 1.14 node would open
-many parallel requests for headers to its peers, increasing the total data
-transferred during initial block download up to 50 times the required data, per
-peer, unnecessarily. As a result, synchronization has time has been reduced by
-around 2.5 times.
+**Dogecoin Core wallet users on Linux platforms are urged to please update to
+this version.**
 
-Additionally, when a node is in initial synchronization and a peer takes too
-long to respond to a new header request, it is now aggressively disconnected,
-to free connection slots for faster peers and not add more stress to already
-overloaded peers.
+Fee Reductions
+--------------
 
-Security enhancements
----------------------
+This release finalizes a new minimum fee recommendation for all participants on
+the Dogecoin network, following the reduction of relay and mining defaults in
+1.14.4. The recommendation has been documented and can be found
+[here](fee-recommendation.md). With this release, the minimum fees when creating
+transactions are recommended to be as follows:
 
-* Proactively disconnect peers sending block headers which would build on an
-  invalid chain.
-* Improve handling and logging of invalid blocks and their descendants
-* Fix a bug that was preventing nodes to load a fixed peer list in case DNS
-  services are unreachable.
+* the recommended minimum transaction fee is 0.01 DOGE/kb, and
+* the recommended dust limit is 1 DOGE, and
+* the recommended RBF increment is 0.001 DOGE.
 
-GUI Improvements
-----------------
+### Wallet/UI Changes
 
-* Add menu option to import a private key, "Import Private Key" from the "File"
-  menu.
-* Improve displayed result when commands in the debug console return null.
-* Fix text overflow on printed keys and address fields in the paper wallet
-  generator.
-* Add column to peers table showing bytes sent/received, accessible via
-  "Debug Window" from the "Help" menu.
-* Add GUI for adding peers manually, accessible from the peers table of the
-  Debug Window.
+* The user interface for selecting fees when transacting DOGE has been updated
+  to give an idea of how much is being spent, rather than a block target. As
+  Dogecoin blocks are not full, typically all transactions are mined in the next
+  block, and therefore the target estimation does not makes sense for Dogecoin.
+* Transaction sizes are no longer rounded up to the nearest kilobyte before
+  calculating fees, which significantly simplifies fee calculation logic and
+  makes it more similar to Bitcoin and Litecoin.
+* The default minimum transaction fee is now 0.01 DOGE per kilobyte. Note that
+  you may see transactions take longer to be confirmed while using these lower
+  fees, until all miners have updated. The new fee slider can help with getting
+  fast-confirming transactions by sliding it all the way to the maximum, or for
+  both CLI and GUI wallet users, this can be made the default by setting
+  `-paytxfee=5.21`.
+* Introduce `-discardthreshold`, a wallet-specific, configurable dust limit that
+  enables gradual implementation of the dust limit on the network side. Each
+  transaction created with the wallet will adhere to this threshold
+  rather than the dust limits used for relay, preventing stuck transactions. The
+  wallet will discard any change to fee and reject output amounts that are lower
+  than this limit. Until this release sees significant network adoption, the
+  default dust limit is recommended to stay at 1 DOGE, as versions 1.14.2 until
+  1.14.4 have a bug that rejects any transaction with an output under 1 DOGE.
+* Derive minimum change from configurable wallet parameters `-discardthreshold`
+  and `-mintxfee`: `minimum change = discard threshold + 2 * minimum fee`.
 
-RPC Improvements
-----------------
+### Relay changes
 
-`getpeerinfo` now includes `feefilter` value for each peer, to be able to diagnose transaction relay issues.
+* Split the dust limit into a hard and soft threshold, to reintroduce the
+  economic disincentive for dust, rather than rejection introduced since 1.14.2
+  * `-harddustlimit` is by default set at 0.001 DOGE and sets the value under
+    which transactions will be rejected by nodes.
+  * The dust limit parameter introduced with 1.14.4 (`-dustlimit`) is now the
+    soft dust limit, enforcing the economic disincentive. Each output under this
+    threshold will be accepted as long as the entire limit is added to fee.
+* Change the default incremental fee used for RBF and mempool limiting to
+  0.0001 DOGE.
+
+BDB Updated to 5.3
+------------------
+
+The Berkley DB version used by Dogecoin Core has been updated to 5.3 (from 5.1)
+as 5.3 is now standard on many Linux distributions. 5.1 and 5.3 wallet files
+have been tested to be interchangeable.
+
+Version display
+---------------
+
+The version displayed on QT's overview page has been changed to display the
+full version rather than just the major version part, because this was confusing
+wallet users.
+
+Key Derivation
+--------------
+
+The BIP32 hierarchical deterministic key derivation path contained the wrong
+chain ID. Previously the chain ID 0 was used, it's now correctly set to 3 as
+per [SLIP44](https://github.com/satoshilabs/slips/blob/master/slip-0044.md).
+
+The wallet.dat files stay fully interoperable between versions. Wallets created
+with 1.14.5 will benefit from greater interoperability with hardware wallets in
+the future.
+
+Namecoin-compatibile AuxPoW mining
+----------------------------------
+
+The `createauxblock` and `submitauxblock` commands have been reintroduced,
+mimicking the same commands from Namecoin 0.17, allowing miners to separate
+wallets from block producing nodes by specifying the address for their coinbase
+transactions.
+
+Two additional features on top of the Namecoin 0.17 API have been added:
+
+* The block caching mechanism has been enhanced to enable mining pools to use
+  multiple wallet addresses if desired.
+* By default the AuxPoW API methods provide the difficulty target in a field
+  named `target`, however this can now be configured to be fully compatible with
+  the Namecoin API (`_target`) by setting the `-rpcnamecoinapi` argument.
+
+RPC API Changes
+---------------
+
+* Added `softdustlimit` and `harddustlimit` fields to `getnetworkinfo` to enable
+  operators and third party scripts to query this information without having to
+  search configuration files or hardcode defaults.
+* Added `createauxblock` and `submitauxblock` methods
+* Added `-rpcnamecoinapi` that allows miners to use Namecoin-compatible AuxPoW
+  APIs, for both `getauxblock` and `createauxblock` methods.
+
+Build System and CI Changes
+---------------------------
+
+The build system for dependencies, continuous integration and binary releases
+has been upgraded from Ubuntu Trusty to Ubuntu Bionic, because the former was
+fully end-of-life. Ubuntu Bionic extends the useful life of the 1.14 build
+system to April 2023, by which time we expect to have switched to 1.21 as the
+main version. With this change, the default gcc used for testing and releases
+has been updated from version 4.8 to 7.
+
+The CI environment has been extended to build and test aarch64 binaries, and to
+perform additional checks that allow us to catch more potential issues early and
+automatically.
+
+Additionally, an experimental CI build environment has been introduced to enable
+ongoing testing and maintenance of incubating features that are not yet ready
+for release. Currently this contains the AVX2 features that aim to increase the
+performance of cryptographic routines within Dogecoin Core.
 
 Minor Changes
 =============
 
-* Corrections to French Canadian, Chinese, German, Indonesian, Korean, Polish and Portuguese translations.
-* Correct a bug that resulted in negative progress per hour being displayed during sync.
-* Regtest network can now generate AuxPoW blocks.
-* Add Snap packaging support.
-* Modify Scrypt code so it's compatible with Alpine Linux's musl library.
-* Update libevent to 2.1.11
-* Update ZMQ to 4.3.4
-* Add build instructions for NixOS.
-* Fix a rare crash bug on shutdown due to ActivateBestChain() being called when there is no best chain.
-* Fix port numbers in `contrib/seeds/generate-seeds.py`.
+* Fix compilation on FreeBSD, which was failing to compile the Scrypt code.
+* Update the FreeBSD build docs, see `doc/build-freebsd.md`.
+* Update default dependencies to OpenSSL 1.0.2u.
+* Refresh translation files to simplify volunteer contributions to translations.
+* Add xkbcommon 0.8.4 as a separate dependency to fix keyboard compatibility
+  issues and resolve issues with inadvertently used build system libraries.
+* Harden and expand the recommended systemd unit files in `contrib/init`.
+* Make the Freetype dependency compile independent from build system libraries.
+* Update the Univalue library to use the latest version maintained by the
+  Bitcoin Core developers.
+* Fix the pruning test suite.
+* Correct the block download timeout for the regtest chain.
+* Shut down when trying to use a corrupted block from disk.
+* Add experimental AVX2 support, to improve the performance of SHA operations.
+* Add a [getting started guide](getting-started.md)
 
 Credits
 =======
 
 * AbcSxyZ
-* Ahmed Castro
-* Alan Rudolf
+* Bertrand Jacquin
+* Carl Dong
 * cg
-* chey
+* CharesFang
 * chromatic
+* Chun Kuan Lee
 * Cory Fields
-* creekhu
 * Dakoda Greaves
-* David Millard
-* Demon
-* Dídac Coll Pujals
-* Escanor Liones
+* Daksh Sharma
+* Dan Raviv
+* dogespacewizard
+* Ed Tubbs
+* Elvis Begović
 * fanquake
-* Florian Schade
-* fmhc
-* Gabriel Gosselin Roberge
-* Gabriel Pérez
-* geekwisdom
-* Ikko Ashimine
-* Jeroen Ooms
-* Jerry Park
-* Joakim Taule Kartveit
-* katzenmalen
-* Khakim Hudaya
-* kregerl
-* lee5378
-* lynklody
-* Malta Micael
-* Matheus Tavares
-* Matt Domko
-* Maximilian Keller
-* MD Islam
-* Mich De L'Orme
+* Hennadii Stepanov
+* KabDeveloper
+* leezhen
+* Luke Dashjr
+* Micael Malta
 * Michi Lumin
-* motz0815
-* nformant
 * Patrick Lodder
-* Piotr Zajączkowski
-* p-j01
-* rht
 * Ross Nicoll
-* sabotagebeats
-* Shafil Alam
-* stefanwouldgo
-* Will
-* xt3r
-* Zach Latta
+* Ryan Crosby
+* Suhas Daftuar
+* Vasil Dimov
+* W. J. van der Laan
+* Xiao Yi

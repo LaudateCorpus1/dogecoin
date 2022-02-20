@@ -13,16 +13,18 @@ Dogecoin Core [DOGE, Ð]
 
 Select language: EN | [CN](./README_zh_CN.md)
 
-Dogecoin is a cryptocurrency like Bitcoin, although it does not use SHA256 as
-its proof of work (POW). Taking development cues from Tenebrix and Litecoin,
-Dogecoin currently employs a simplified variant of scrypt.
+Dogecoin is a community-driven cryptocurrency that was inspired by a Shiba Inu meme. The Dogecoin Core software allows anyone to operate a node in the Dogecoin blockchain networks and uses the Scrypt hashing method for Proof of Work. It is adapted from Bitcoin Core and other cryptocurrencies.
+
+For information about the default fees used on the Dogecoin network, please
+refer to the [fee recommendation](doc/fee-recommendation.md).
 
 **Website:** [dogecoin.com](https://dogecoin.com)
 
-## Installation 💻
+## Usage 💻
 
-Please see [the installation guide](INSTALL.md) for information about installing
-Dogecoin Core.
+To start your journey with Dogecoin Core, see the [installation guide](INSTALL.md) and the [getting started](doc/getting-started.md) tutorial.
+
+The JSON-RPC API provided by Dogecoin Core is self-documenting and can be browsed with `dogecoin-cli help`, while detailed information for each command can be viewed with `dogecoin-cli help <command>`. Alternatively, see the [Bitcoin Core documentation](https://developer.bitcoin.org/reference/rpc/) - which implement a similar protocol - to get a browsable version.
 
 ### Such ports
 
